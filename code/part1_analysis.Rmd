@@ -124,3 +124,21 @@ spotify_data %>%
 
 ```
 
+```{r}
+library(car)
+pairwise = spotify_data %>%
+  select(duration_ms, tempo, valence, speechiness, loudness)
+
+pairs(pairwise[,])
+
+powerTransform(cbind(pairwise[,]))
+
+model = lm(track_popularity ~ duration_ms+tempo+valence+speechiness + loudness, spotify_data)
+
+fitted = fitted(model)
+
+plot(spotify_data$track_popularity ~ fitted, main="Response vs Fitted", xlab="Fitted",
+     ylab="Response")
+
+summary(model)
+```
