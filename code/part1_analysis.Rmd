@@ -35,13 +35,28 @@ spotify_data_clean <- spotify_data %>%
 
 ## Checking assumptions hold
 ```{r}
+library(broom)
+
 spotify_data_subset <- spotify_data %>%
     select(track_popularity, duration_ms, tempo, valence, speechiness, loudness)
+spotify_data_original_vars <- spotify_data_subset
+
+spotify_data_subset <- spotify_data_subset[spotify_data_subset$valence != 0, ]
 
 model <- lm(track_popularity ~ duration_ms + tempo + valence + speechiness + loudness, data = spotify_data_subset)
 
 # Summary of the model
 summary(model)
+
+tidy(model)
+glance(model)
+
+
+criteria <- c(summary(model)$adj.r.squared,
+extractAIC(model, k=2)[2],
+extractAIC(model, k=log(nrow(spotify_data_subset)))[2])
+criteria
+
 
 ## Estimate (Intercept): 5.754e+01 (or 57.54)
 ## The intercept represents the estimated value of the response variable, track_popularity, when all predictor variables (duration, tempo, valence, speechiness, loudness) are equal to zero.
@@ -112,9 +127,15 @@ predictor_summary <- spotify_data %>%
 print("Predictor Variables Summary")
 print(predictor_summary)
 
+# Trying some transformations
+spotify_data_subset$duration_ms_trans <- log(spotify_data_subset$duration_ms + 1)
+spotify_data_subset$speechiness_trans <- log((spotify_data_subset$speechiness + 1e-5) / (1 - spotify_data_subset$speechiness + 1e-5))
+spotify_data_subset$loudness_trans <- log(spotify_data_subset$loudness - min(spotify_data_subset$loudness) + 1)
+
+spotify_data_subset
 # Visualize distributions of predictors (optional)
-spotify_data %>%
-  select(duration_ms, tempo, valence, speechiness, loudness) %>%
+spotify_data_subset %>%
+  select(duration_ms, tempo, valence, speechiness, loudness, duration_ms_trans, loudness_trans, speechiness_trans) %>%
   gather(key = "variable", value = "value") %>%
   ggplot(aes(x = value)) +
   geom_histogram(bins = 30, fill = "blue", color = "black", alpha = 0.7) +
@@ -122,5 +143,89 @@ spotify_data %>%
   theme_minimal() +
   labs(title = "Distributions of Predictor Variables", x = "Value", y = "Frequency")
 
+```
+
+```{r}
+# install.packages("car")
+#install.packages("broom")
+library(car)
+library(broom)
+any(spotify_data_subset$duration_ms <= 0)
+any(spotify_data_subset$valence <= 0)
+
+#spotify_data_subset
+sum(spotify_data_subset$valence == 0)
+
+#result <- powerTransform(cbind(spotify_data_subset[, c(2, 4)]))
+# result
+
+# sqrt  responseviolates assumptions
+
+# spotify_data_subset$track_popularity_shifted <- spotify_data_subset$track_popularity + + abs(min(spotify_data_subset$track_popularity)) + 1
+
+# lnPopularity <- sqrt(spotify_data_subset$track_popularity)
+
+#model_t1 <- lm(lnPopularity ~ duration_ms + tempo + valence + speechiness + loudness, data = spotify_data_subset)
+# resid_t1 <- resid(model_t1)
+
+# qqnorm(resid_t1, main="ln(y)")
+# qqline(resid_t1)
+
+
+bcDuration <- spotify_data_subset$duration_ms^(8/43)
+bcDuration <- log(spotify_data_subset$duration_ms + 1)
+bcValence <- spotify_data_subset$valence^(82/99)
+#bcLoudness <- spotify_data_subset$loudness^(3/14) # NAN
+
+
+## Re-checking assumptions on transformed values.
+trans <- lm(track_popularity ~ bcDuration + bcValence + loudness, data = spotify_data_subset)
+
+
+tidy(trans)
+glance(model)
+#summary(trans)
+vif(trans)
+
+plot(resid(trans)~fitted(trans), main="All Transformed")
+
+resid_t <- resid(trans)
+qqnorm(resid_t, main="ln(y)")
+qqline(resid_t)
+
+
+reduced <- lm(track_popularity ~ duration_ms + valence + loudness, data = spotify_data_subset)
+vif(reduced)
+
+#par(mfrow=c(4,3))
+plot(resid(reduced)~fitted(reduced), main="reduced")
+
+resid_t2 <- resid(reduced)
+qqnorm(resid_t2, main="")
+qqline(resid_t2)
+```
+
+```{r}
+# partial f-test
+n <- nrow(spotify_data_subset)
+n
+anova(reduced, model) 
+qf(0.95, 2, n - 5 - 1)
+
+tidy(reduced)
+glance(reduced)
+```
+
+
+```{r}
+
+
+summary(model)
+
+summary(trans2)
+
+stepAIC(lm(track_popularity ~ ., data=spotify_data_subset),
+scope=list(lower=lm(track_popularity ~ 1, data=d)),
+direction = "backward", k=2)
 ```
 
