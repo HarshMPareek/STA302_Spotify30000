@@ -146,6 +146,7 @@ spotify_data_subset %>%
 ```
 
 ```{r}
+<<<<<<< HEAD
 # install.packages("car")
 #install.packages("broom")
 library(car)
@@ -229,3 +230,21 @@ scope=list(lower=lm(track_popularity ~ 1, data=d)),
 direction = "backward", k=2)
 ```
 
+```{r}
+library(car)
+pairwise = spotify_data %>%
+  select(duration_ms, tempo, valence, speechiness, loudness)
+
+pairs(pairwise[,])
+
+powerTransform(cbind(pairwise[,]))
+
+model = lm(track_popularity ~ duration_ms+tempo+valence+speechiness + loudness, spotify_data)
+
+fitted = fitted(model)
+
+plot(spotify_data$track_popularity ~ fitted, main="Response vs Fitted", xlab="Fitted",
+     ylab="Response")
+
+summary(model)
+```
