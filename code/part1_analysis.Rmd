@@ -146,7 +146,6 @@ spotify_data_subset %>%
 ```
 
 ```{r}
-<<<<<<< HEAD
 # install.packages("car")
 #install.packages("broom")
 library(car)
@@ -202,8 +201,13 @@ vif(reduced)
 plot(resid(reduced)~fitted(reduced), main="reduced")
 
 resid_t2 <- resid(reduced)
+fitted_t2 <- fitted(reduced)
 qqnorm(resid_t2, main="")
 qqline(resid_t2)
+
+par(mfrow = c(2, 3))
+plot(fitted_t2, resid_t2, main = "Residuals vs Fitted", xlab = "Fitted values", ylab = "Residuals")
+abline(h = 0, col = "red")
 ```
 
 ```{r}
