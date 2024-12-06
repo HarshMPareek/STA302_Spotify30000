@@ -214,11 +214,23 @@ abline(h = 0, col = "red")
 # partial f-test
 n <- nrow(spotify_data_subset)
 n
-anova(reduced, model) 
-qf(0.95, 2, n - 5 - 1)
+# anova(reduced, model) 
+# qf(0.95, 2, n - 5 - 1)
 
 tidy(reduced)
 glance(reduced)
+summary(reduced)
+
+plot(reduced, which = 1)
+plot(reduced, which = 2)
+#observed vs predicted
+
+predicted <- predict(reduced)
+ggplot(spotify_data_subset, aes(x = predicted, y = track_popularity)) +
+  geom_point() +
+  geom_abline(slope = 1, intercept = 0, color = "red") +
+  labs(title = "Observed vs. Predicted Track Popularity",
+       x = "Predicted Popularity", y = "Observed Popularity")
 ```
 
 
