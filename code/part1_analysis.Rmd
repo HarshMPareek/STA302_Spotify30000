@@ -252,3 +252,59 @@ plot(spotify_data$track_popularity ~ fitted, main="Response vs Fitted", xlab="Fi
 
 summary(model)
 ```
+
+```{r}
+# prolbematic points analysis
+
+model2 = lm(track_popularity ~ duration_ms+valence+loudness,data= spotify_data)
+
+n <- nrow(spotify_data)
+p <- length(coef(model2))-1
+
+# leverage cutoff
+hcut <- 2*((p+1)/n)
+
+# cook's distance cutoff
+cookcut <- qf(0.5, p+1, n-p-1)
+
+# dffits cutoff
+fitcut <- 2*sqrt((p+1)/n)
+
+# dfbeta cutoff
+betacut <- 2/sqrt(n)
+
+# leverage statistic
+h_ii <- hatvalues(model2)
+
+# standardized residuals
+r_i <- rstandard(model2)
+
+# cook's distance 
+D_i <- cooks.distance(model2)
+
+# dffits
+dffits_i <- dffits(model2)
+
+# dfbetas
+dfbetas_i <- dfbetas(model2)
+
+# which observations are leverage points?
+which(h_ii > hcut)
+
+# which observations are regression outliers?
+which(r_i > 4 | r_i < -4)
+
+# which observations are influential by cook's distance influence on all fitted?
+which(D_i > cookcut)
+
+# which observations are influential by dffits influence on own fitted?
+which(abs(dffits_i) > fitcut)
+
+# which observations are influential by dfbetas influence on at least 1 estimated coefficient?
+for(i in 1:4){
+  print(paste0("Beta ", i-1))
+  which(abs(dfbetas_i[,i]) > betacut) # this checks all betas in a loop
+}
+
+```
+
